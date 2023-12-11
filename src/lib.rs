@@ -1,7 +1,7 @@
-mod rating;
-mod character;
-mod parser;
-mod error;
+pub mod rating;
+pub mod character;
+pub mod parser;
+pub mod error;
 
 #[tokio::test]
 async fn test() {
