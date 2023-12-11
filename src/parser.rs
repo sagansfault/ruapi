@@ -35,7 +35,7 @@ pub(crate) fn parse_search_recent_games(body: String) -> Vec<RecentGame> {
             .map(sanitize) else {
             continue;
         };
-        let Some(_rating) = element.next()
+        let Some(rating) = element.next()
             .map(|e| e.inner_html())
             .map(sanitize) else {
             continue;
@@ -80,6 +80,7 @@ pub(crate) fn parse_search_recent_games(body: String) -> Vec<RecentGame> {
         };
         result_vec.push(RecentGame {
             date,
+            rating,
             floor,
             opponent,
             opponent_character,

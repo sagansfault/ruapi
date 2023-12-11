@@ -70,6 +70,7 @@ pub struct CharacterData {
 #[derive(Debug, Clone)]
 pub struct RecentGame {
     pub date: String,
+    pub rating: String,
     pub floor: String,
     pub opponent: String,
     pub opponent_character: String,
