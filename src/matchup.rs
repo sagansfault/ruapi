@@ -18,7 +18,7 @@ pub static TH_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("th").unwr
 pub static TD_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td").unwrap());
 pub static SPAN_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("span").unwrap());
 
-async fn load_matchups<'a>(matchup_chart: MatchupChart) -> Result<MatchupData<'a>, Box<dyn std::error::Error>> {
+pub async fn load_matchups<'a>(matchup_chart: MatchupChart) -> Result<MatchupData<'a>, Box<dyn std::error::Error>> {
     let mut matchups: HashMap<&'a Character, HashMap<&'a Character, f64>> = HashMap::new();
 
     let res = reqwest::get(DOMAIN).await?.text().await?;
