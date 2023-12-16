@@ -30,10 +30,10 @@ let player_id = player_data.id;
 let recent_games = load_match_history_id(&player_id, &character::GOLDLEWIS).await?;
 ```
 
-### Matchup Data (top 1000)
+### Matchup Data
 ```rust
-// load the matchup data
-let matchup = matchup::load_matchups().await.unwrap();
+// load the matchup data for top 100 players (other charts available)
+let matchup = matchup::load_matchups(matchup::MatchupChart::TopHundred).await.unwrap();
 // winrate of Goldlewis vs Potemkin as a percentage
 let winrate = matchup.get_matchup(&character::GOLDLEWIS, &character::POTEMKIN).unwrap();
 ```

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
+use enum_ordinalize::Ordinalize;
 use once_cell::sync::Lazy;
-use scraper::Selector;
+use scraper::{ElementRef, Selector};
+use scraper::html::Select;
 use crate::character;
 use crate::character::Character;
 
@@ -16,15 +18,17 @@ pub static TH_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("th").unwr
 pub static TD_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td").unwrap());
 pub static SPAN_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("span").unwrap());
 
-
-pub async fn load_matchups<'a>() -> Result<MatchupData<'a>, Box<dyn std::error::Error>> {
+async fn load_matchups<'a>(matchup_chart: MatchupChart) -> Result<MatchupData<'a>, Box<dyn std::error::Error>> {
     let mut matchups: HashMap<&'a Character, HashMap<&'a Character, f64>> = HashMap::new();
 
     let res = reqwest::get(DOMAIN).await?.text().await?;
     let document = scraper::Html::parse_document(&res);
 
     let mut tables = document.select(&TABLE_SELECTOR);
-    tables.next(); // top 1000 is second table
+    // skip tables until we get to the one we want
+    for _ in 0..matchup_chart.ordinal() {
+        tables.next();
+    }
     let table = tables.next().unwrap();
     let mut rows = table.select(&ROW_SELECTOR);
     rows.next(); // first row is titles
@@ -55,6 +59,11 @@ pub async fn load_matchups<'a>() -> Result<MatchupData<'a>, Box<dyn std::error::
     }
 
     Ok(MatchupData{ matchups })
+}
+
+#[derive(Ordinalize)]
+pub enum MatchupChart {
+    Global, TopThousand, Proportional, TopHundred
 }
 
 #[derive(Debug, Clone)]
