@@ -1,5 +1,5 @@
 # ruapi
-A webscraper and api for retrieving data from [ratingupdate.info](https://ratingupdate.info)
+An api and webscraper for retrieving data from [ratingupdate.info](https://ratingupdate.info)
 
 ### Player Data
 ```rust
@@ -31,6 +31,9 @@ let recent_games = load_match_history_id(&player_id, &character::GOLDLEWIS).awai
 ```
 
 ### Matchup Data
+Note that matchup data returned by these functions is the *raw* winrate. The percentages displayed on ratingupdate
+are not raw winrates, but are rather adjusted values to account for player rating, this is not accurate. These functions
+will return only the raw winrate of each character against another in a given skill bracket (matchup chart).
 ```rust
 // load the matchup data for top 100 players (other charts available)
 let matchup = matchup::load_matchups(matchup::MatchupChart::TopHundred).await.unwrap();

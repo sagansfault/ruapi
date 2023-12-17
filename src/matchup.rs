@@ -1,22 +1,26 @@
 use std::collections::HashMap;
+
 use enum_ordinalize::Ordinalize;
 use once_cell::sync::Lazy;
-use scraper::{ElementRef, Selector};
-use scraper::html::Select;
+use regex::Regex;
+use scraper::Selector;
+
 use crate::character;
 use crate::character::Character;
 
 const DOMAIN: &str = "http://ratingupdate.info/matchups";
 
-pub static TABLE_SELECTOR: Lazy<Selector> = Lazy::new(|| {
+static TABLE_SELECTOR: Lazy<Selector> = Lazy::new(|| {
     Selector::parse("body > section.section > div > div > div > table").unwrap()
 });
-pub static ROW_SELECTOR: Lazy<Selector> = Lazy::new(|| {
+static ROW_SELECTOR: Lazy<Selector> = Lazy::new(|| {
     Selector::parse("tbody > tr").unwrap()
 });
-pub static TH_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("th").unwrap());
-pub static TD_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td").unwrap());
-pub static SPAN_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("span").unwrap());
+static TH_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("th").unwrap());
+static TD_SELECTOR: Lazy<Selector> = Lazy::new(|| Selector::parse("td").unwrap());
+
+static CHARACTER_REGEX_MATCHER: Lazy<Regex> = Lazy::new(|| Regex::new(r"vs (\S{2})").unwrap());
+static WINRATE_REGEX_MATCHER: Lazy<Regex> = Lazy::new(|| Regex::new(r"Raw: (\S{2,4})%").unwrap());
 
 pub async fn load_matchups<'a>(matchup_chart: MatchupChart) -> Result<MatchupData<'a>, Box<dyn std::error::Error>> {
     let mut matchups: HashMap<&'a Character, HashMap<&'a Character, f64>> = HashMap::new();
@@ -39,22 +43,22 @@ pub async fn load_matchups<'a>(matchup_chart: MatchupChart) -> Result<MatchupDat
             continue;
         };
         for matchup in row.select(&TD_SELECTOR) {
-            let Some(versus) = matchup
-                .attr("title")
-                .map(|s| s.split(" vs "))
-                .and_then(|mut s| s.nth(1)) // looks like: "SO vs KY junk"
-                .map(|s| &s[..2])
+            let Some(info_str) = matchup.attr("title") else {
+                continue;
+            };
+            let Some(versus) = CHARACTER_REGEX_MATCHER.captures(info_str)
+                .and_then(|caps| caps.get(1)) // first match (0) is always the whole match
+                .map(|cap| cap.as_str())
                 .and_then(|s| character::get_character_short(String::from(s))) else {
                 continue;
             };
-            let Some(fraction) = matchup.select(&SPAN_SELECTOR).next()
-                .map(|v| v.inner_html())
-                .map(|v| String::from(v.trim()))
-                .map(|v| v.replace('%', ""))
-                .and_then(|v| v.parse::<f64>().ok()) else {
+            let Some(winrate) = WINRATE_REGEX_MATCHER.captures(info_str)
+                .and_then(|caps| caps.get(1)) // first match (0) is always the whole match
+                .map(|cap| cap.as_str())
+                .and_then(|s| s.parse::<f64>().ok()) else {
                 continue;
             };
-            matchups.entry(character).or_default().insert(versus, fraction);
+            matchups.entry(character).or_default().insert(versus, winrate);
         }
     }
 
