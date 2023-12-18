@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs::File;
 
 use enum_ordinalize::Ordinalize;
 use once_cell::sync::Lazy;
@@ -63,6 +64,29 @@ pub async fn load_matchups<'a>(matchup_chart: MatchupChart) -> Result<MatchupDat
     }
 
     Ok(MatchupData{ matchups })
+}
+
+pub async fn load_matchups_csv_string<'a>(matchup_chart: MatchupChart) -> Result<String, Box<dyn std::error::Error>> {
+    let matchups = load_matchups(matchup_chart).await?;
+    let mut matchups: Vec<(&Character, Vec<(&Character, f64)>)> = matchups.matchups
+        .into_iter()
+        .map(|(k, v)| {
+            (k, {
+                let mut p = v.into_iter().map(|(a, b)| (a, b)).collect::<Vec<(&Character, f64)>>();
+                p.sort_by(|(a, _), (c, _)| a.id.partial_cmp(&c.id).unwrap());
+                p
+            })
+        }).collect();
+    matchups.sort_by(|(a, _), (c, _)| a.id.partial_cmp(&c.id).unwrap());
+    let characters_row = matchups.iter().map(|(c, _)| c.shortname.clone()).collect::<Vec<String>>().join(",");
+    let mut data = format!("blank,{}\n", characters_row);
+    for (character, mus) in matchups {
+        let mu_data: Vec<String> = mus.iter().map(|(_, wr)| format!("{}", wr)).collect();
+        let mu_data = mu_data.join(",");
+        let s = format!("{},{}\n", character.shortname.clone(), mu_data);
+        data = format!("{}{}", data, s);
+    }
+    Ok(data)
 }
 
 #[derive(Ordinalize)]

@@ -1,3 +1,9 @@
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
+use crate::character::Character;
+use crate::matchup::MatchupData;
+
 pub mod rating;
 pub mod character;
 pub mod parser;
